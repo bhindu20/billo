@@ -10,3 +10,7 @@
 * Activate virtualenv, source "path to virtualenv/bin" activate
 * git clone git url
 * Install Django, pip3.5 install -r requirements.txt
+
+* python manage.py migrate
+* python manage.py createsuperuser
+* python manage.py runserver
