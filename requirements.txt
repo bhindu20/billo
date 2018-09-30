@@ -1,4 +1,5 @@
 Django==2.1
 psycopg2-binary
+django-material
 # firebase-admin
 # Pyrebase
