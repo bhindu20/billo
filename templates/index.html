@@ -1,1 +1,14 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+  <div class="row">
+    <div class="col s9">
+      <h2>Bill Pay...Simplified</h2>  
+      <p>Easily track your bills through our web app or on your device. Know when your payment was sent and received with tracking information and confirmation notices.</p>
+    </div>
+    <div class="col s2">
+      <img src="{% static "animations/billpay.gif"%}" />
+    </div>
+  </div>
+{% endblock %}
