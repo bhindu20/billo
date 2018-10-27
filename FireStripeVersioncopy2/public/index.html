@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud Functions for Firebase (Stripe example)</title>
+    <script src="https://js.stripe.com/v2/"></script>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.3.0/firebaseui.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.12/css/mdb.min.css" rel="stylesheet">
+    <!-- JQuery -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.12/js/mdb.min.js"></script>
+  </head>
+  <body>
+
+    <div class="container">
+      <div id="app">
+        <div id="firebaseui-auth-container"></div>
+        <div id="loader">&hellip;</div>
+        <div v-if="currentUser">
+          <div class="row">
+            <div class="d-flex justify-content-end">
+            <h4>Hello {{ currentUser.email }}</h4>
+          <button type="button" class="btn btn-primary btn-md" v-on:click="signOut">Sign out</button>
+          </div>
+        </div>
+          <div v-if="stripeCustomerInitialized">
+            <div class="container">
+  <div class="row">
+    <div class="col-md-3">
+      <!-- Card -->
+<div class="card">
+  <!-- Card content -->
+  <div class="card-body">
+
+    <!-- Title -->
+    <h4 class="card-title"><a>Cards on File</a></h4>
+    <div class="text-center mt-4 mb-2">
+      <form>
+        <!-- Default input name -->
+        <label for="NewCardNumber">Number</label>
+        <input type="text" id="NewCardNumber" class="form-control form-control-sm" v-model="newCreditCard.number">
+        <label for="NewCardCCV">CCV</label>
+        <input type="text" id="NewCardCCV" class="form-control form-control-sm" v-model="newCreditCard.cvc">
+        <div class="form-row">
+            <!-- Default input -->
+            <div class="form-group col-md-6">
+
+        <label for="NewCardExpMonth">Expiration Month</label>
+        <input type="text" id="NewCardExpMonth" class="form-control form-control-sm" v-model="newCreditCard.exp_month" size="2">
+      </div>
+        <div class="form-group col-md-6">
+        <label for="NewCardExpYear">Expiration Year</label>
+        <input type="text" id="NewCardExpYear" class="form-control form-control-sm" v-model="newCreditCard.exp_year" size="4">
+      </div>
+      </div>
+        <label for="NewCardZip">Zip</label>
+        <input type="text" id="NewCardZip" class="form-control form-control-sm" v-model="newCreditCard.address_zip">
+
+        <div class="text-center mt-4 mb-2">
+          <button type="button" class="btn btn-primary btn-md" v-on:click="submitNewCreditCard">Add a New Card</button>
+        </div>
+        <div>{{ newCreditCard.error }}</div>
+      </form>
+
+  </div>
+    <!-- Text -->
+    <ul class="list-group">
+      <li class="list-group-item" v-for="(source, id) in sources">
+        <span v-if="source.id">
+          {{ source.brand }} &hellip;{{ source.last4 }}
+          (exp. {{ source.exp_month }}/{{ source.exp_year }})
+        </span>
+        <span v-else>&hellip;</span>
+      </li>
+    </ul>
+
+
+
+</div>
+  </div>
+</div>
+    <div class="col-md-6">
+      <!-- Card -->
+      <div class="card mx-xl-5">
+
+          <!-- Card body -->
+          <div class="card-body">
+            <h4 class="card-title"><a>Send a Payment</a></h4>
+            <form>
+                    <!-- Default input -->
+                    <div class="form-group">
+                      <label for="VendorName">Payee Name</label>
+                       <input type="text" id="VendorName" class="form-control">
+                    </div>
+
+                <!-- Default input -->
+                <div class="form-group">
+                    <label for="VendorAddress">Address</label>
+                    <input type="text" class="form-control" id="inputAddress" placeholder="1234 Main St">
+                </div>
+                <!-- Grid row -->
+                <div class="form-row">
+                    <!-- Default input -->
+                    <div class="form-group col-md-6">
+                        <label for="VendorCity">City</label>
+                        <input type="text" class="form-control" id="inputCity" placeholder="New York City">
+                    </div>
+                    <!-- Default input -->
+                    <div class="form-group col-md-6">
+                        <label for="VendorZip">Zip</label>
+                        <input type="text" class="form-control" id="inputZip" placeholder="11206-1117">
+                    </div>
+                </div>
+                <!-- Grid row -->
+                <!-- Grid row -->
+                <div class="form-row">
+                    <!-- Default input -->
+                    <div class="form-group col-md-6">
+                        <label for="PaymentAmount">Amount</label>
+                        <input type="number" step=".01"class="form-control" id="PayAmount" placeholder="$25.00" v-model="newCharge.amount">
+                    </div>
+                    <!-- Default input -->
+                    <div class="form-group col-md-6">
+                        <label for="MemoLine">Memo/Invoice</label>
+                        <input type="text" class="form-control" id="MemoLine" placeholder="70019832">
+                    </div>
+
+                </div>
+                <!-- Grid row -->
+                <div class="text-center mt-4 mb-2">
+
+                <select class="browser-default custom-select" v-model="newCharge.source">
+                  <option :value="null">Default payment method</option>
+                  <option v-for="(source, id) in sources" v-bind:value="source.id" v-if="source.id">
+                    {{ source.brand }} &hellip;{{ source.last4 }}
+                    (exp. {{ source.exp_month }}/{{ source.exp_year }})
+                  </option>
+                </select>
+              </div>
+                <div class="text-center mt-4 mb-2">
+                <button type="submit" class="btn btn-primary btn-md" v-on:click="submitNewCharge">Send Payment</button>
+                <div>{{ newCharge.error }}</div>
+              </div>
+            </form>
+            <!-- Extended default form grid -->
+
+          </div>
+          <!-- Card body -->
+
+      </div>
+      <!-- Card -->
+
+
+
+
+    </div>
+    <div class="col-md-3">
+      <!-- Card -->
+      <div class="card">
+
+        <!-- Card content -->
+        <div class="card-body">
+
+          <!-- Title -->
+          <h4 class="card-title"><a>Transactions</a></h4>
+          <!-- Text -->
+          <ul class="list-group">
+            <li class="list-group-item" v-for="(charge, id) in charges">
+              {{ charge.amount }}
+              <span v-if="charge.error">
+                {{ charge.error }}
+              </span>
+              <span v-else-if="charge.outcome">
+                {{ charge.outcome.seller_message }}
+                {{ charge.source.brand }} &hellip;{{ charge.source.last4 }}
+                (exp. {{ charge.source.exp_month }}/{{ charge.source.exp_year }})
+              </span>
+              <span v-else>&hellip;<span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+      <!-- Card -->
+
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+    <!-- Import and configure the Firebase SDK -->
+    <!-- These scripts are made available when the app is served or deployed on Firebase Hosting -->
+    <!-- If you do not serve/host your project using Firebase Hosting see https://firebase.google.com/docs/web/setup -->
+    <script src="/__/firebase/5.4.0/firebase-app.js"></script>
+    <script src="/__/firebase/5.4.0/firebase-auth.js"></script>
+    <script src="/__/firebase/5.4.0/firebase-database.js"></script>
+    <script src="/__/firebase/init.js"></script>
+
+    <!-- Import Firebase UI -->
+    <script src="https://cdn.firebase.com/libs/firebaseui/3.3.0/firebaseui.js"></script>
+
+    <script>
+      Stripe.setPublishableKey('pk_test_VM3JDVUga5SQzE9JARHdVqEU');
+      var firebaseUI = new firebaseui.auth.AuthUI(firebase.auth());
+      var firebaseAuthOptions = {
+        callbacks: {
+          signInSuccess: (currentUser, credential, redirectUrl) => { return false; },
+          uiShown: () => { document.getElementById('loader').style.display = 'none'; }
+        },
+        signInFlow: 'popup',
+        signInSuccessUrl: '/',
+        signInOptions: [ firebase.auth.GoogleAuthProvider.PROVIDER_ID ],
+        tosUrl: '/'
+      };
+      firebase.auth().onAuthStateChanged(firebaseUser => {
+        if (firebaseUser) {
+          document.getElementById('loader').style.display = 'none';
+          app.currentUser = firebaseUser;
+          app.listen();
+        } else {
+          firebaseUI.start('#firebaseui-auth-container', firebaseAuthOptions);
+          app.currentUser = null;
+        }
+      });
+      var app = new Vue({
+        el: '#app',
+        data: {
+          currentUser: null,
+          sources: {},
+          stripeCustomerInitialized: false,
+          newCreditCard: {
+            number: '4242424242424242',
+            cvc: '111',
+            exp_month: 1,
+            exp_year: 2020,
+            address_zip: '00000'
+          },
+          charges: {},
+          newCharge: {
+            source: null,
+            amount: 2000
+          }
+        },
+        ready: () => {
+        },
+        methods: {
+          listen: function() {
+            firebase.database().ref(`/stripe_customers/${this.currentUser.uid}/customer_id`).on('value', snapshot => {
+              this.stripeCustomerInitialized = (snapshot.val() !== null);
+            }, () => {
+              this.stripeCustomerInitialized = false;
+            });
+            firebase.database().ref(`/stripe_customers/${this.currentUser.uid}/sources`).on('value', snapshot => {
+              this.sources = snapshot.val();
+            }, () => {
+              this.sources = {};
+            });
+            firebase.database().ref(`/stripe_customers/${this.currentUser.uid}/charges`).on('value', snapshot => {
+              this.charges = snapshot.val();
+            }, () => {
+              this.charges = {};
+            });
+          },
+          submitNewCreditCard: function() {
+            Stripe.card.createToken({
+              number: this.newCreditCard.number,
+              cvc: this.newCreditCard.cvc,
+              exp_month: this.newCreditCard.exp_month,
+              exp_year: this.newCreditCard.exp_year,
+              address_zip: this.newCreditCard.address_zip
+            }, (status, response) => {
+              if (response.error) {
+                this.newCreditCard.error = response.error.message;
+              } else {
+                firebase.database().ref(`/stripe_customers/${this.currentUser.uid}/sources`).push({token: response.id}).then(() => {
+                  this.newCreditCard = {
+                    number: '',
+                    cvc: '',
+                    exp_month: 1,
+                    exp_year: 2017,
+                    address_zip: ''
+                  };
+                });
+              }
+            });
+          },
+          submitNewCharge: function() {
+            firebase.database().ref(`/stripe_customers/${this.currentUser.uid}/charges`).push({
+              source: this.newCharge.source,
+              amount: parseInt(this.newCharge.amount)
+            });
+          },
+          signOut: function() {
+            firebase.auth().signOut()
+          }
+        }
+      });
+    </script>
+    <!-- at the end of BODY -->
+<!-- CSS is included via this JavaScript file -->
+  </body>
+</html>
